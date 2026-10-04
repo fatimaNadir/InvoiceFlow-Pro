@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceFlow Pro - Smart Invoicing & Client Ledger SaaS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea * { visibility: visible; }
+            #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white font-bold text-xl">⚡</div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white">InvoiceFlow Pro</h1>
+                    <p class="text-xs text-slate-400">Smart Client Invoicing & Ledger SaaS</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="exportData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg border border-slate-700 transition">📥 Backup</button>
+                <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg border border-slate-700 cursor-pointer transition">
+                    📤 Restore <input type="file" id="importFile" onchange="importData(event)" class="hidden">
+                </label>
+                <a href="https://fatimanadir.gumroad.com/l/sitecraft-pro-v2" target="_blank" class="hidden sm:inline-block px-3 py-1.5 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 text-xs font-medium rounded-lg transition">🛒 Buy Source Code</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full space-y-8">
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Total Invoices</p>
+                <h3 id="statTotalInvoices" class="text-2xl font-bold text-white mt-1">0</h3>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Total Collected (Paid)</p>
+                <h3 id="statPaidAmount" class="text-2xl font-bold text-emerald-400 mt-1">$0.00</h3>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Pending Amount</p>
+                <h3 id="statPendingAmount" class="text-2xl font-bold text-amber-400 mt-1">$0.00</h3>
+            </div>
+        </div>
+
+        <!-- Action & Form Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Create Invoice Form -->
+            <div class="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg space-y-4">
+                <h2 class="text-lg font-semibold text-white border-b border-slate-800 pb-3">✨ Create New Invoice</h2>
+                
+                <form id="invoiceForm" onsubmit="saveInvoice(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Client Name</label>
+                        <input type="text" id="clientName" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Client Email</label>
+                        <input type="email" id="clientEmail" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="client@example.com">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Service / Item</label>
+                            <input type="text" id="itemName" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="Web Design">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Amount ($)</label>
+                            <input type="number" id="itemAmount" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" placeholder="250">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Status</label>
+                        <select id="invoiceStatus" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg text-sm transition shadow-lg shadow-indigo-600/20">Generate & Save Invoice</button>
+                </form>
+            </div>
+
+            <!-- Invoices List Table -->
+            <div id="printableArea" class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-4 gap-3">
+                        <div>
+                            <h2 class="text-lg font-semibold text-white">📋 Invoice Ledger</h2>
+                            <span id="invoiceCountBadge" class="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full inline-block mt-1">0 Invoices</span>
+                        </div>
+                        <div class="flex items-center space-x-2 w-full sm:w-auto">
+                            <input type="text" id="searchInput" onkeyup="renderInvoices()" placeholder="Search client..." class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 w-full sm:w-48">
+                            <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg text-slate-300 border border-slate-700 transition">🖨️️ Print</button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-xs text-slate-400 uppercase">
+                                    <th class="py-3 px-3">Client</th>
+                                    <th class="py-3 px-3">Service</th>
+                                    <th class="py-3 px-3">Amount</th>
+                                    <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceTableBody" class="divide-y divide-slate-800/60 text-sm">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer with Contact & Gumroad Link -->
+    <footer class="border-t border-slate-800 py-8 text-center space-y-4 mt-auto bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-center items-center gap-4 text-sm text-slate-400">
+            <span>Need custom software or web tools?</span>
+            <a href="fatima80nadir@gmail.com" class="px-4 py-2 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-lg font-medium transition flex items-center space-x-2">
+                <span>✉️ Contact Me / Hire Me</span>
+            </a>
+            <a href="https://fatimanadir.gumroad.com/l/sitecraft-pro-v2" target="_blank" class="px-4 py-2 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-lg font-medium transition">
+                🛒 Buy Source Code ($19)
+            </a>
+        </div>
+        <p class="text-xs text-slate-600">© 2026 InvoiceFlow Pro. 100% Secure Client-Side Ledger Utility.</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let invoices = JSON.parse(localStorage.getItem('invoiceflow_data')) || [];
+
+        function renderInvoices() {
+            const tbody = document.getElementById('invoiceTableBody');
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            tbody.innerHTML = '';
+            
+            let filteredInvoices = invoices.filter(inv => 
+                inv.clientName.toLowerCase().includes(searchQuery) || 
+                inv.itemName.toLowerCase().includes(searchQuery) ||
+                inv.clientEmail.toLowerCase().includes(searchQuery)
+            );
+
+            let total = invoices.length;
+            let paidSum = 0;
+            let pendingSum = 0;
+
+            document.getElementById('invoiceCountBadge').innerText = `${total} Invoices`;
+            document.getElementById('statTotalInvoices').innerText = total;
+
+            invoices.forEach(inv => {
+                let amount = parseFloat(inv.amount) || 0;
+                if (inv.status === 'Paid') paidSum += amount;
+                else pendingSum += amount;
+            });
+
+            if (filteredInvoices.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No invoices found.</td></tr>`;
+                document.getElementById('statPaidAmount').innerText = `$${paidSum.toFixed(2)}`;
+                document.getElementById('statPendingAmount').innerText = `$${pendingSum.toFixed(2)}`;
+                return;
+            }
+
+            filteredInvoices.forEach((inv, index) => {
+                let originalIndex = invoices.indexOf(inv);
+                let amount = parseFloat(inv.amount) || 0;
+                let statusBadge = inv.status === 'Paid' 
+                    ? `<span class="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-medium">Paid</span>`
+                    : `<span class="px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-medium">Pending</span>`;
+
+                let row = `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-3 px-3">
+                            <div class="font-medium text-white">${inv.clientName}</div>
+                            <div class="text-xs text-slate-400">${inv.clientEmail}</div>
+                        </td>
+                        <td class="py-3 px-3 text-slate-300">${inv.itemName}</td>
+                        <td class="py-3 px-3 font-semibold text-white">$${amount.toFixed(2)}</td>
+                        <td class="py-3 px-3">${statusBadge}</td>
+                        <td class="py-3 px-3 text-right space-x-2">
+                            <button onclick="toggleStatus(${originalIndex})" class="text-xs text-indigo-400 hover:text-indigo-300 underline">Toggle</button>
+                            <button onclick="deleteInvoice(${originalIndex})" class="text-xs text-rose-400 hover:text-rose-300">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById('statPaidAmount').innerText = `$${paidSum.toFixed(2)}`;
+            document.getElementById('statPendingAmount').innerText = `$${pendingSum.toFixed(2)}`;
+            localStorage.setItem('invoiceflow_data', JSON.stringify(invoices));
+        }
+
+        function saveInvoice(e) {
+            e.preventDefault();
+            const clientName = document.getElementById('clientName').value;
+            const clientEmail = document.getElementById('clientEmail').value;
+            const itemName = document.getElementById('itemName').value;
+            const amount = document.getElementById('itemAmount').value;
+            const status = document.getElementById('invoiceStatus').value;
+
+            invoices.push({ clientName, clientEmail, itemName, amount, status });
+            document.getElementById('invoiceForm').reset();
+            renderInvoices();
+        }
+
+        function toggleStatus(index) {
+            invoices[index].status = invoices[index].status === 'Paid' ? 'Pending' : 'Paid';
+            renderInvoices();
+        }
+
+        function deleteInvoice(index) {
+            if (confirm('Are you sure you want to delete this invoice?')) {
+                invoices.splice(index, 1);
+                renderInvoices();
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(invoices));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "invoiceflow_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    invoices = JSON.parse(e.target.result);
+                    renderInvoices();
+                    alert('Data restored successfully!');
+                } catch (err) {
+                    alert('Invalid JSON file format.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        renderInvoices();
+    </script>
+</body>
+</html>
